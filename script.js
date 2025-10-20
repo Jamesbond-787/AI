@@ -1,57 +1,67 @@
-const sendButton = document.getElementById('send-button');
-const userInput = document.getElementById('user-input');
-const chatWindow = document.getElementById('chat-window');
-const API_KEY = "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"; // Get your API key from OpenAI
+document.addEventListener('DOMContentLoaded', () => {
+    const chatMessages = document.getElementById('chat-messages');
+    const userInput = document.getElementById('user-input');
+    const sendButton = document.getElementById('send-button');
 
-sendButton.addEventListener('click', sendMessage);
-userInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        sendMessage();
-    }
-});
+    const OPENAI_API_KEY = "YOUR_OPENAI_API_KEY"; // REPLACE THIS WITH YOUR KEY
+    const API_ENDPOINT = "https://api.openai.com/v1/chat/completions";
 
-async function sendMessage() {
-    const userText = userInput.value.trim();
-    if (userText === '') return;
+    const sendMessage = async () => {
+        const userText = userInput.value.trim();
+        if (userText === '') return;
 
-    // Display user's message
-    appendMessage(userText, 'user-message');
-    userInput.value = '';
+        // Display user's message
+        appendMessage(userText, 'user-message');
+        userInput.value = '';
 
-    // Call the OpenAI API
-    try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${API_KEY}`
-            },
-            body: JSON.stringify({
-                model: "gpt-3.5-turbo",
-                messages: [{role: "user", content: userText}]
-            })
-        });
+        // Display "typing" indicator
+        const typingMessage = appendMessage('...', 'bot-message');
 
-        if (!response.ok) {
-            throw new Error(`API call failed: ${response.statusText}`);
+        try {
+            const response = await fetch(API_ENDPOINT, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${OPENAI_API_KEY}`
+                },
+                body: JSON.stringify({
+                    model: "gpt-3.5-turbo", // You can use other models like gpt-4o
+                    messages: [{ role: "user", content: userText }],
+                    max_tokens: 150
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error.message);
+            }
+
+            const data = await response.json();
+            const botText = data.choices[0].message.content;
+
+            // Update the "typing" message with the bot's response
+            typingMessage.querySelector('p').textContent = botText;
+        } catch (error) {
+            console.error("Error fetching AI response:", error);
+            typingMessage.querySelector('p').textContent = "Sorry, there was an error. Please try again.";
         }
+    };
 
-        const data = await response.json();
-        const aiText = data.choices[0].message.content;
+    const appendMessage = (text, className) => {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', className);
+        const p = document.createElement('p');
+        p.textContent = text;
+        messageDiv.appendChild(p);
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        return messageDiv;
+    };
 
-        // Display AI's response
-        appendMessage(aiText, 'ai-message');
-
-    } catch (error) {
-        console.error("Error calling OpenAI API:", error);
-        appendMessage("Sorry, I'm having trouble connecting right now.", 'ai-message');
-    }
-}
-
-function appendMessage(text, className) {
-    const messageElement = document.createElement('div');
-    messageElement.classList.add('message', className);
-    messageElement.innerText = text;
-    chatWindow.appendChild(messageElement);
-    chatWindow.scrollTop = chatWindow.scrollHeight; // Auto-scroll to the latest message
-}
+    sendButton.addEventListener('click', sendMessage);
+    userInput.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter') {
+            sendMessage();
+        }
+    });
+});
