@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
 
-    const OPENAI_API_KEY = "YOUR_OPENAI_API_KEY"; // REPLACE THIS WITH YOUR KEY
+    const OPENAI_API_KEY = "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"; // REPLACE THIS WITH YOUR KEY
     const API_ENDPOINT = "https://api.openai.com/v1/chat/completions";
 
     const sendMessage = async () => {
